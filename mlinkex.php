@@ -35,40 +35,44 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 		require(PLUGIN_DIR.'/front.php');
 	}
 
-	function loadUrls(){
-		global $wpdb;
-		$settings = mysql_fetch_object(mysql_query(' SELECT option_value FROM  '.$wpdb->prefix.'options WHERE option_name="mlinkex" LIMIT 1'));
-		$settings = unserialize($settings->option_value);
-		
-		if(file_exists(PLUGIN_DIR.'/link.html')){
-			$links = file_get_contents(PLUGIN_DIR.'/links.html');
-			$tpl = file_get_contents(PLUGIN_DIR.'/link.html');
-			$full = 1;
-		}else{
-			$tpl = '<a href="%url%" title="%anchor%" rel="%rel%">%anchor%</a>';
-		}
-		$show_mlinkex = '';
-		$sql = mysql_query('SELECT anchor,title,url,add_nofollow FROM  '.$wpdb->prefix.'mlinkex WHERE status="1"');
-		while($rand = mysql_fetch_object($sql)){
-			$item = $tpl;
-			$item = str_replace('%anchor%', $rand->anchor, $item);
-			$item = str_replace('%title%', $rand->title, $item);
-			$item = str_replace('%url%', $rand->url, $item);
-			$item = str_replace('%rel%', ($rand->add_nofollow == 1 || $settings['add_nofollow'] == 1) ? 'nofollow' : '', $item);
+	if(!function_exists('loadUrls'){
+		function loadUrls(){
+			global $wpdb;
+			$settings = mysql_fetch_object(mysql_query(' SELECT option_value FROM  '.$wpdb->prefix.'options WHERE option_name="mlinkex" LIMIT 1'));
+			$settings = unserialize($settings->option_value);
 			
-			$show_mlinkex .= $item;
+			if(file_exists(PLUGIN_DIR.'/link.html')){
+				$links = file_get_contents(PLUGIN_DIR.'/links.html');
+				$tpl = file_get_contents(PLUGIN_DIR.'/link.html');
+				$full = 1;
+			}else{
+				$tpl = '<a href="%url%" title="%anchor%" rel="%rel%">%anchor%</a>';
+			}
+			$show_mlinkex = '';
+			$sql = mysql_query('SELECT anchor,title,url,add_nofollow FROM  '.$wpdb->prefix.'mlinkex WHERE status="1"');
+			while($rand = mysql_fetch_object($sql)){
+				$item = $tpl;
+				$item = str_replace('%anchor%', $rand->anchor, $item);
+				$item = str_replace('%title%', $rand->title, $item);
+				$item = str_replace('%url%', $rand->url, $item);
+				$item = str_replace('%rel%', ($rand->add_nofollow == 1 || $settings['add_nofollow'] == 1) ? 'nofollow' : '', $item);
+				
+				$show_mlinkex .= $item;
+			}
+			if($full == 1){
+				$links = str_replace('%add_link%', $settings['add_link'], $links);
+				echo str_replace('%links%', $show_mlinkex, $links);
+			}else{
+				echo $show_mlinkex;
+			}
 		}
-		if($full == 1){
-			$links = str_replace('%add_link%', $settings['add_link'], $links);
-			echo str_replace('%links%', $show_mlinkex, $links);
-		}else{
-			echo $show_mlinkex;
+	}
+	if(!function_exists('loadUrls_init'){
+		function loadUrls_init(){
+		  wp_register_sidebar_widget(1, ('Maribol WP Link Exchange'), 'loadUrls');
 		}
 	}
 	
-	function loadUrls_init(){
-	  wp_register_sidebar_widget(1, ('Maribol WP Link Exchange'), 'loadUrls');
-	}
 	add_action("plugins_loaded", "loadUrls_init");
 	
 ?>
